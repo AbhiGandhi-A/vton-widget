@@ -7,7 +7,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { client as createClient } from '@gradio/client';
 import { Buffer } from 'buffer';
-import fetch from 'node-fetch'; // Add this to make 'fetch' available globally in the file scope
+import fetch from 'node-fetch'; // This line requires 'node-fetch' to be in package.json
 
 dotenv.config();
 
@@ -184,8 +184,7 @@ async function processVirtualTryOn(personImageBase64, clothImageBase64) {
         console.log('[VTON] Processing output image...');
 
         let imageData;
-        // Use the imported 'fetch' which is now at the top of the file
-        // const fetch = (await import('node-fetch')).default; // Remove this line
+        // fetch is imported globally at the top
 
         // Check if the output is a remote URL or a local path
         if (outputPath.startsWith('http')) {

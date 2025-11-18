@@ -29,4 +29,4 @@ tmp/
 temp/
 dist/
 
-vercel.json
+/vercel.json
