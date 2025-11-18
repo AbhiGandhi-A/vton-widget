@@ -1,0 +1,45 @@
+{
+  "name": "virtual-tryon-widget",
+  "version": "1.0.0",
+  "description": "Embeddable Virtual Try-On Widget with Hugging Face API",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "virtual-try-on",
+    "ai",
+    "fashion",
+    "widget"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "@gradio/client": "^1.0.0",
+    "path": "0.12.7",
+    "os": "0.1.2",
+    "fs": "0.0.1-security",
+    "url": "0.11.4",
+    "next": "16.0.3",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "0.554.0",
+    "tailwind-merge": "3.4.0",
+    "tailwindcss-animate": "1.0.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.6",
+    "@types/react-dom": "19.2.3",
+    "@types/node": "24.10.1",
+    "tailwindcss": "4.1.17",
+    "typescript": "5.9.3",
+    "postcss": "8.5.6"
+  }
+}
