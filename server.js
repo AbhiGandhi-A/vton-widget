@@ -7,6 +7,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { client as createClient } from '@gradio/client';
 import { Buffer } from 'buffer';
+import fetch from 'node-fetch'; // Add this to make 'fetch' available globally in the file scope
 
 dotenv.config();
 
@@ -17,7 +18,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HF_TOKEN = process.env.HF_TOKEN;
-const API_URL = process.env.API_URL || `http://localhost:${PORT}`;
+
+// *** FIX START: Use RENDER_EXTERNAL_URL if available ***
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+// Priority: 1. Render URL -> 2. Custom API_URL Env -> 3. Localhost
+const API_URL = RENDER_URL || process.env.API_URL || `http://localhost:${PORT}`; 
+console.log(`[VTON] Final API URL for Widget: ${API_URL}`);
+// *** FIX END ***
+
 // Set a generous timeout for the AI model prediction
 const GRADIO_TIMEOUT_MS = 180000; // 3 minutes
 
@@ -176,7 +184,8 @@ async function processVirtualTryOn(personImageBase64, clothImageBase64) {
         console.log('[VTON] Processing output image...');
 
         let imageData;
-        const fetch = (await import('node-fetch')).default;
+        // Use the imported 'fetch' which is now at the top of the file
+        // const fetch = (await import('node-fetch')).default; // Remove this line
 
         // Check if the output is a remote URL or a local path
         if (outputPath.startsWith('http')) {
@@ -184,6 +193,7 @@ async function processVirtualTryOn(personImageBase64, clothImageBase64) {
             if (!response.ok) {
                 throw new Error(`Failed to download result image from ${outputPath}: ${response.statusText}`);
             }
+            // Use response.buffer() for node-fetch
             imageData = await response.buffer();
         } else {
             imageData = fs.readFileSync(outputPath);
@@ -340,7 +350,7 @@ app.get('/', (req, res) => {
 // --- Server Start ---
 app.listen(PORT, () => {
     console.log(`\n[VTON] Server running on http://localhost:${PORT}`);
-    console.log(`[VTON] Widget URL: http://localhost:${PORT}/widget.js`);
-    console.log(`[VTON] Health check: http://localhost:${PORT}/api/health`);
-    console.log(`[VTON] API endpoint: POST http://localhost:${PORT}/api/vton/process\n`);
+    console.log(`[VTON] Widget URL: ${API_URL}/widget.js`);
+    console.log(`[VTON] Health check: ${API_URL}/api/health`);
+    console.log(`[VTON] API endpoint: POST ${API_URL}/api/vton/process\n`);
 });
