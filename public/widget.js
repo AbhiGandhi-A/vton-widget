@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        apiBaseUrl: window.VTON_API_URL || 'vton-widget.vercel.app',
+        apiBaseUrl: window.VTON_API_URL || 'vton-widget-p2af5u10n-abhigandhi250-gmailcoms-projects.vercel.app',
         timeout: 180000 // Client-side timeout for fetch
     };
 
