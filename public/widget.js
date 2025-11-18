@@ -1,7 +1,7 @@
 // public/widget.js
 (function() {
     // VTON_API_URL is injected by the server.js on the fly.
-    const API_ENDPOINT = (window.VTON_API_URL || "http://localhost:3000") + "/api/virtual-tryon/process";
+    const API_ENDPOINT = (window.VTON_API_URL || "https://vton-widget-k4hh.onrender.com") + "/api/virtual-tryon/process";
 
     /**
      * Converts a File object to a Base64 string.
