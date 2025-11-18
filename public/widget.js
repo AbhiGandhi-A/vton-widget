@@ -1,7 +1,7 @@
 // public/widget.js
 (function() {
     // VTON_API_URL is injected by the server.js on the fly.
-    const API_ENDPOINT = (window.VTON_API_URL || "https://vton-widget-k4hh.onrender.com") + "/api/virtual-tryon/process";
+    const API_ENDPOINT = (window.VTON_API_URL || "http://localhost:3000") + "/api/virtual-tryon/process";
 
     /**
      * Converts a File object to a Base64 string.
@@ -42,14 +42,20 @@
 
     /**
      * Creates and returns the HTML structure for the widget.
-     * Includes image preview elements.
+     * @param {string | null} targetId - The ID of the external image element to target.
      * @returns {string} The HTML content.
      */
-    function getWidgetHtml() {
+    function getWidgetHtml(targetId) {
+        const resultSection = targetId 
+            ? `<p style="margin-top: 15px; color: #4CAF50;">Result will be applied to the image element with ID: **#${targetId}**</p>`
+            : `<div id="vton-result-area">
+                 <h4>Try-On Result:</h4>
+                 <img id="vton-result-image" src="" alt="Try-on Result" style="display:none;">
+               </div>`;
+
         return `
             <style>
                 #vton-widget {
-                    /* INCREASED MAX WIDTH */
                     max-width: 480px; 
                     margin: 0 auto;
                     padding: 25px;
@@ -90,7 +96,6 @@
                     align-items: center;
                 }
                 .preview-container {
-                    /* Adjusted layout for better spacing and visibility */
                     display: flex;
                     justify-content: space-around;
                     gap: 15px;
@@ -101,13 +106,12 @@
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    width: 45%; /* Give each wrapper adequate space */
+                    width: 45%; 
                 }
                 .image-preview {
-                    /* FIX: Ensure the image fits inside the box entirely */
                     width: 120px; 
-                    height: 150px; /* Increased height for better view of person image */
-                    object-fit: contain; /* CRUCIAL: Ensures the whole image is visible */
+                    height: 150px; 
+                    object-fit: contain; 
                     border: 2px solid #ddd;
                     border-radius: 8px;
                     display: none;
@@ -186,17 +190,14 @@
                         <small style="margin-top: 5px; color: #555;">Your Photo</small>
                     </div>
                     <div class="preview-wrapper">
-                        <img id="clothImagePreview" class="image-preview" src="" alt="Cloth Preview">
+                        <img id="clothImagePreview" class="image-preview" src="" alt="Cloth Photo">
                         <small style="margin-top: 5px; color: #555;">Cloth Photo</small>
                     </div>
                 </div>
 
                 <button id="vton-generate-button">Generate Try-On Image</button>
 
-                <div id="vton-result-area">
-                    <h4>Try-On Result:</h4>
-                    <img id="vton-result-image" src="" alt="Try-on Result" style="display:none;">
-                </div>
+                ${resultSection}
             </div>
         `;
     }
@@ -210,9 +211,22 @@
             console.error("VTON Widget: Could not find root element with ID 'vton'.");
             return;
         }
+        
+        // --- NEW LOGIC: Check for data-target-id ---
+        const targetId = rootElement.getAttribute('data-target-id');
+        let externalTargetElement = null;
+        if (targetId) {
+            externalTargetElement = document.getElementById(targetId);
+            if (!externalTargetElement || externalTargetElement.tagName !== 'IMG') {
+                console.error(`VTON Widget: data-target-id specified (${targetId}) but element not found or is not an <img> tag.`);
+                // Nullify the target if it's invalid so it falls back to the internal display
+                externalTargetElement = null; 
+            }
+        }
+        // -------------------------------------------
 
-        // Render the widget UI
-        rootElement.innerHTML = getWidgetHtml();
+        // Render the widget UI, passing the targetId so HTML adjusts
+        rootElement.innerHTML = getWidgetHtml(targetId);
 
         // Get elements
         const personImageFileInput = document.getElementById("personImageFile");
@@ -221,7 +235,10 @@
         const clothImagePreview = document.getElementById("clothImagePreview");
         const generateButton = document.getElementById("vton-generate-button");
         const statusMessage = document.getElementById("vton-status-message");
-        const resultImage = document.getElementById("vton-result-image");
+        
+        // Select the result display element: either the external target or the internal one
+        const finalResultImage = externalTargetElement || document.getElementById("vton-result-image");
+
 
         // Set up real-time image previews
         setupImagePreview(personImageFileInput, personImagePreview);
@@ -248,8 +265,12 @@
             generateButton.disabled = true;
             statusMessage.textContent = "Uploading and processing... This may take up to 3 minutes.";
             statusMessage.className = 'status-info';
-            resultImage.style.display = 'none';
-            resultImage.src = ""; // Clear previous result
+            
+            // Hide/Clear the result image (only hide if using internal display)
+            if (!externalTargetElement) {
+                finalResultImage.style.display = 'none';
+            }
+            finalResultImage.src = ""; 
 
             try {
                 // 3. Convert images to Base64 concurrently
@@ -273,8 +294,13 @@
                 // 5. Handle Response
                 if (response.ok && data.status === 'success' && data.processed_image_base64) {
                     const base64Image = data.processed_image_base64;
-                    resultImage.src = `data:image/jpeg;base64,${base64Image}`;
-                    resultImage.style.display = 'block';
+                    
+                    // Update the selected image element's source
+                    finalResultImage.src = `data:image/jpeg;base64,${base64Image}`;
+                    if (!externalTargetElement) {
+                       finalResultImage.style.display = 'block';
+                    }
+
                     statusMessage.textContent = "Success! Image generated.";
                     statusMessage.className = 'status-success';
                 } else {
