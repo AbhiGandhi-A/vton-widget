@@ -1,648 +1,303 @@
+// public/widget.js
 (function() {
-    'use strict';
+    // VTON_API_URL is injected by the server.js on the fly.
+    const API_ENDPOINT = (window.VTON_API_URL || "http://localhost:3000") + "/api/virtual-tryon/process";
 
-    const CONFIG = {
-        apiBaseUrl: window.VTON_API_URL || 'http://localhost:3000',
-        timeout: 180000 // Client-side timeout for fetch
-    };
-
-    function injectStyles() {
-        if (document.getElementById('vton-widget-styles')) {
-            return;
-        }
-
-        const styles = document.createElement('style');
-        styles.id = 'vton-widget-styles';
-        styles.textContent = `
-          .vton-container {
-            max-width: 600px;
-            margin: 0 auto;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: #1a1a2e;
-          }
-
-          .vton-widget {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-          }
-
-          .vton-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 24px;
-            text-align: center;
-          }
-
-          .vton-header h2 {
-            margin: 0 0 8px 0;
-            font-size: 24px;
-            font-weight: 700;
-          }
-
-          .vton-header p {
-            margin: 0;
-            font-size: 14px;
-            opacity: 0.9;
-          }
-
-          .vton-content {
-            padding: 24px;
-          }
-
-          .vton-step {
-            margin-bottom: 24px;
-          }
-
-          .vton-step-label {
-            font-weight: 600;
-            color: #1a1a2e;
-            margin-bottom: 12px;
-            font-size: 14px;
-          }
-
-          .vton-upload-area {
-            border: 2px dashed #cbd5e0;
-            border-radius: 8px;
-            padding: 32px 24px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-          }
-
-          .vton-upload-area:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-          }
-
-          .vton-upload-area.active {
-            border-color: #667eea;
-            background: #f0f4ff;
-          }
-
-          .vton-upload-icon {
-            font-size: 40px;
-            margin-bottom: 12px;
-          }
-
-          .vton-upload-text {
-            font-weight: 600;
-            color: #1a1a2e;
-            margin-bottom: 4px;
-          }
-
-          .vton-upload-subtext {
-            font-size: 12px;
-            color: #718096;
-          }
-
-          .vton-file-input {
-            display: none;
-          }
-
-          .vton-preview {
-            border-radius: 8px;
-            overflow: hidden;
-            background: #f8f9fa;
-          }
-
-          .vton-preview-image {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 8px;
-          }
-
-          .vton-preview-label {
-            font-size: 12px;
-            color: #718096;
-            margin-bottom: 8px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-
-          .vton-button {
-            display: inline-block;
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-          }
-
-          .vton-button-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            width: 100%;
-            margin-top: 12px;
-          }
-
-          .vton-button-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-          }
-
-          .vton-button-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-
-          .vton-button-secondary {
-            background: #e2e8f0;
-            color: #1a1a2e;
-            margin-top: 8px;
-            width: 100%;
-          }
-
-          .vton-button-secondary:hover {
-            background: #cbd5e0;
-          }
-
-          .vton-loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 24px;
-          }
-
-          .vton-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: vton-spin 1s linear infinite;
-            margin-bottom: 16px;
-          }
-
-          @keyframes vton-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-
-          .vton-loading-text {
-            color: #718096;
-            font-size: 14px;
-            text-align: center;
-          }
-
-          .vton-error {
-            background: #fed7d7;
-            color: #c53030;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 16px;
-            line-height: 1.5;
-          }
-
-          .vton-error-quota {
-            background: #fef3c7;
-            color: #92400e;
-            border-left: 4px solid #f59e0b;
-          }
-
-          .vton-success {
-            background: #c6f6d5;
-            color: #22543d;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 16px;
-          }
-
-          .vton-result {
-            margin-top: 24px;
-          }
-
-          .vton-result-image {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            display: block;
-            margin-bottom: 16px;
-          }
-
-          .vton-result-badge {
-            display: inline-block;
-            background: #c6f6d5;
-            color: #22543d;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-          }
-
-          .vton-two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-          }
-
-          @media (max-width: 600px) {
-            .vton-two-column {
-              grid-template-columns: 1fr;
-            }
-            .vton-header h2 {
-              font-size: 20px;
-            }
-            .vton-container {
-              max-width: 100%;
-            }
-          }
-        `;
-
-        document.head.appendChild(styles);
+    /**
+     * Converts a File object to a Base64 string.
+     * @param {File} file - The file to convert.
+     * @returns {Promise<string>} - The base64 string.
+     */
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
     }
 
-    class VirtualTryOnWidget {
-        constructor(containerId) {
-            this.container = document.getElementById(containerId);
-            if (!this.container) {
-                console.error(`[VTON] Container with id "${containerId}" not found`);
-                return;
-            }
-
-            this.state = {
-                userImage: null,
-                clothImage: null,
-                result: null,
-                loading: false,
-                error: null
-            };
-
-            this.render();
-        }
-
-        render() {
-            injectStyles();
-            const containerId = this.container.id;
-
-            const html = `
-              <div class="vton-container">
-                <div class="vton-widget">
-                  <div class="vton-header">
-                    <h2>Virtual Try-On</h2>
-                    <p>Upload your photo and clothing to see the result</p>
-                  </div>
-                  <div class="vton-content">
-                    <div id="vton-error-container-${containerId}"></div>
-                    <div id="vton-success-container-${containerId}"></div>
-
-                    <div id="vton-input-section-${containerId}">
-                      <div class="vton-two-column">
-                        <div class="vton-step">
-                          <div class="vton-step-label">Your Photo</div>
-                          <div
-                            class="vton-upload-area"
-                            id="vton-user-upload-${containerId}"
-                            onclick="document.getElementById('vton-user-input-${containerId}').click()"
-                          >
-                            <div class="vton-upload-icon">👤</div>
-                            <div class="vton-upload-text">Upload Your Photo</div>
-                            <div class="vton-upload-subtext">JPG, PNG (Max 10MB)</div>
-                          </div>
-                          <input
-                            type="file"
-                            id="vton-user-input-${containerId}"
-                            class="vton-file-input"
-                            accept="image/*"
-                          >
-                          <div id="vton-user-preview-${containerId}"></div>
-                        </div>
-
-                        <div class="vton-step">
-                          <div class="vton-step-label">Clothing Image</div>
-                          <div
-                            class="vton-upload-area"
-                            id="vton-cloth-upload-${containerId}"
-                            onclick="document.getElementById('vton-cloth-input-${containerId}').click()"
-                          >
-                            <div class="vton-upload-icon">👕</div>
-                            <div class="vton-upload-text">Upload Clothing</div>
-                            <div class="vton-upload-subtext">JPG, PNG (Max 10MB)</div>
-                          </div>
-                          <input
-                            type="file"
-                            id="vton-cloth-input-${containerId}"
-                            class="vton-file-input"
-                            accept="image/*"
-                          >
-                          <div id="vton-cloth-preview-${containerId}"></div>
-                        </div>
-                      </div>
-
-                      <button
-                        id="vton-generate-btn-${containerId}"
-                        class="vton-button vton-button-primary"
-                        disabled
-                      >
-                        Generate Try-On
-                      </button>
-                    </div>
-
-                    <div id="vton-loading-section-${containerId}" style="display: none;">
-                      <div class="vton-loading">
-                        <div class="vton-spinner"></div>
-                        <div class="vton-loading-text">
-                          <p>Processing your images...</p>
-                          <p style="font-size: 12px; opacity: 0.7; margin-top: 8px;">This may take up to 3 minutes</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div id="vton-result-section-${containerId}" style="display: none;">
-                      <div class="vton-result">
-                        <div class="vton-preview-label">Virtual Try-On Result</div>
-                        <img id="vton-result-image-${containerId}" class="vton-result-image" alt="Result">
-                        <div style="margin-bottom: 16px;">
-                          <span class="vton-result-badge">✓ Try-on complete</span>
-                        </div>
-                      </div>
-                      <button
-                        id="vton-reset-btn-${containerId}"
-                        class="vton-button vton-button-secondary"
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-
-            this.container.innerHTML = html;
-            this.attachEventListeners(containerId);
-        }
-
-        attachEventListeners(containerId) {
-            const userInput = document.getElementById(`vton-user-input-${containerId}`);
-            const clothInput = document.getElementById(`vton-cloth-input-${containerId}`);
-            const generateBtn = document.getElementById(`vton-generate-btn-${containerId}`);
-            const resetBtn = document.getElementById(`vton-reset-btn-${containerId}`);
-
-            userInput.addEventListener('change', (e) => this.handleUserImageUpload(e, containerId));
-            clothInput.addEventListener('change', (e) => this.handleClothImageUpload(e, containerId));
-            generateBtn.addEventListener('click', () => this.generateTryOn(containerId));
-            resetBtn.addEventListener('click', () => this.reset(containerId));
-        }
-
-        handleUserImageUpload(event, containerId) {
+    /**
+     * Displays a preview of the selected image.
+     * @param {HTMLInputElement} fileInput - The file input element.
+     * @param {HTMLImageElement} previewElement - The image element for the preview.
+     */
+    function setupImagePreview(fileInput, previewElement) {
+        fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (!file) return;
-
-            if (file.size > 10 * 1024 * 1024) {
-                this.showError('Image size must be less than 10MB', containerId);
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.state.userImage = e.target.result;
-                this.displayPreview('user', e.target.result, containerId);
-                this.updateGenerateButton(containerId);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        handleClothImageUpload(event, containerId) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (file.size > 10 * 1024 * 1024) {
-                this.showError('Image size must be less than 10MB', containerId);
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                this.state.clothImage = e.target.result;
-                this.displayPreview('cloth', e.target.result, containerId);
-                this.updateGenerateButton(containerId);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        displayPreview(type, imageData, containerId) {
-            const previewContainer = document.getElementById(`vton-${type}-preview-${containerId}`);
-            const uploadArea = document.getElementById(`vton-${type}-upload-${containerId}`);
-
-            uploadArea.style.display = 'none';
-            previewContainer.innerHTML = `
-              <div style="margin-top: 12px;">
-                <div class="vton-preview-label">Selected</div>
-                <img src="${imageData}" class="vton-preview-image" alt="Preview">
-              </div>
-            `;
-        }
-
-        updateGenerateButton(containerId) {
-            const btn = document.getElementById(`vton-generate-btn-${containerId}`);
-            if (this.state.userImage && this.state.clothImage) {
-                btn.disabled = false;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewElement.src = e.target.result;
+                    previewElement.style.display = 'block';
+                    previewElement.alt = `Preview of ${fileInput.id}`;
+                };
+                reader.readAsDataURL(file);
             } else {
-                btn.disabled = true;
-            }
-        }
-
-        async generateTryOn(containerId) {
-            if (!this.state.userImage || !this.state.clothImage) {
-                this.showError('Please upload both images', containerId);
-                return;
-            }
-
-            this.state.loading = true;
-            this.showLoading(containerId);
-
-            try {
-                const userBase64 = this.state.userImage;
-                const clothBase64 = this.state.clothImage;
-
-                console.log('[VTON] Sending request to:', `${CONFIG.apiBaseUrl}/api/vton/process`);
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), CONFIG.timeout);
-
-                const response = await fetch(`${CONFIG.apiBaseUrl}/api/vton/process`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userImage: userBase64,
-                        clothImage: clothBase64
-                    }),
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    const isJson = response.headers.get('content-type')?.includes('application/json');
-                    let errorDetails = {};
-
-                    if (isJson) {
-                        errorDetails = await response.json().catch(() => ({ message: `Server Error: ${response.status}` }));
-                    } else {
-                        throw new Error(`Server error: ${response.status}`);
-                    }
-
-                    const serverMessage = errorDetails.message; // Get the custom message from the server response
-                    
-                    if (response.status === 429 || errorDetails.errorType === 'quota_limit') {
-                        // Throw a recognizable error, and attach the server's specific message to it
-                        const quotaError = new Error('QUOTA_LIMIT');
-                        quotaError.customMessage = serverMessage; 
-                        throw quotaError;
-                    }
-
-                    throw new Error(errorDetails.message || `Server error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                this.state.result = data.result;
-                this.showResult(containerId);
-
-            } catch (error) {
-                console.error('[VTON] Error:', error);
-
-                let errorMessage = error.message || 'An error occurred. Please try again.';
-
-                if (error.name === 'AbortError') {
-                    errorMessage = 'Request timed out. Please try again.';
-                } else if (error.message === 'QUOTA_LIMIT') {
-                    // Use the custom message stored on the error object
-                    errorMessage = error.customMessage || 'AI service quota limit reached or service is unavailable. Please try again later.';
-                }
-
-                this.showError(errorMessage, containerId);
-            } finally {
-                this.state.loading = false;
-            }
-        }
-
-        showLoading(containerId) {
-            document.getElementById(`vton-input-section-${containerId}`).style.display = 'none';
-            document.getElementById(`vton-loading-section-${containerId}`).style.display = 'block';
-            document.getElementById(`vton-result-section-${containerId}`).style.display = 'none';
-            this.clearMessage(containerId);
-        }
-
-        showResult(containerId) {
-            const resultImage = document.getElementById(`vton-result-image-${containerId}`);
-            resultImage.src = `data:image/jpeg;base64,${this.state.result}`;
-
-            document.getElementById(`vton-input-section-${containerId}`).style.display = 'none';
-            document.getElementById(`vton-loading-section-${containerId}`).style.display = 'none';
-            document.getElementById(`vton-result-section-${containerId}`).style.display = 'block';
-
-            this.showSuccess('Virtual try-on completed successfully!', containerId);
-        }
-
-        reset(containerId) {
-            this.state = {
-                userImage: null,
-                clothImage: null,
-                result: null,
-                loading: false,
-                error: null
-            };
-
-            document.getElementById(`vton-user-input-${containerId}`).value = '';
-            document.getElementById(`vton-cloth-input-${containerId}`).value = '';
-            document.getElementById(`vton-user-preview-${containerId}`).innerHTML = '';
-            document.getElementById(`vton-cloth-preview-${containerId}`).innerHTML = '';
-
-            document.getElementById(`vton-user-upload-${containerId}`).style.display = 'block';
-            document.getElementById(`vton-cloth-upload-${containerId}`).style.display = 'block';
-
-            document.getElementById(`vton-input-section-${containerId}`).style.display = 'block';
-            document.getElementById(`vton-loading-section-${containerId}`).style.display = 'none';
-            document.getElementById(`vton-result-section-${containerId}`).style.display = 'none';
-
-            this.updateGenerateButton(containerId);
-            this.clearMessage(containerId);
-        }
-
-        showError(message, containerId) {
-            const container = document.getElementById(`vton-error-container-${containerId}`);
-
-            let cssClass = 'vton-error';
-            // Use the quota class for quota/service availability issues (checks if the custom message is present)
-            if (message.includes('quota') || message.includes('unavailable') || message.includes('overloaded') || message.includes('generic error') || message.includes('3 PM IST')) {
-                cssClass = 'vton-error vton-error-quota';
-            } else if (message.includes('Authentication failed')) {
-                cssClass = 'vton-error vton-error-quota'; 
-            }
-
-            container.innerHTML = `<div class="${cssClass}">${message}</div>`;
-
-            const timeout = message.includes('quota') || message.includes('3 PM IST') ? 8000 : 5000;
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, timeout);
-
-            // Re-show input section on error
-            document.getElementById(`vton-input-section-${containerId}`).style.display = 'block';
-            document.getElementById(`vton-loading-section-${containerId}`).style.display = 'none';
-            document.getElementById(`vton-result-section-${containerId}`).style.display = 'none';
-        }
-
-        showSuccess(message, containerId) {
-            const container = document.getElementById(`vton-success-container-${containerId}`);
-            container.innerHTML = `<div class="vton-success">${message}</div>`;
-
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 5000);
-        }
-
-        clearMessage(containerId) {
-            document.getElementById(`vton-error-container-${containerId}`).innerHTML = '';
-            document.getElementById(`vton-success-container-${containerId}`).innerHTML = '';
-        }
-    }
-
-    function initializeWidget() {
-        const containers = document.querySelectorAll('[data-vton-widget]');
-        containers.forEach((container) => {
-            if (!container.dataset.initialized) {
-                container.dataset.initialized = 'true';
-                new VirtualTryOnWidget(container.id);
+                previewElement.src = "";
+                previewElement.style.display = 'none';
             }
         });
     }
 
+    /**
+     * Creates and returns the HTML structure for the widget.
+     * Includes image preview elements.
+     * @returns {string} The HTML content.
+     */
+    function getWidgetHtml() {
+        return `
+            <style>
+                #vton-widget {
+                    /* INCREASED MAX WIDTH */
+                    max-width: 480px; 
+                    margin: 0 auto;
+                    padding: 25px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 12px;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                    background-color: #ffffff;
+                }
+                #vton-widget h3 {
+                    margin-top: 0;
+                    color: #1a1a1a;
+                    text-align: center;
+                    font-size: 1.5em;
+                    border-bottom: 2px solid #f0f0f0;
+                    padding-bottom: 10px;
+                    margin-bottom: 20px;
+                }
+                #vton-widget label {
+                    display: block;
+                    margin-top: 15px;
+                    margin-bottom: 5px;
+                    font-weight: 600;
+                    color: #333;
+                    font-size: 0.95em;
+                }
+                #vton-widget input[type="file"] {
+                    width: 100%;
+                    padding: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 6px;
+                    box-sizing: border-box; 
+                }
+                .input-group {
+                    margin-bottom: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .preview-container {
+                    /* Adjusted layout for better spacing and visibility */
+                    display: flex;
+                    justify-content: space-around;
+                    gap: 15px;
+                    margin: 10px 0 25px 0; 
+                    width: 100%;
+                }
+                .preview-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 45%; /* Give each wrapper adequate space */
+                }
+                .image-preview {
+                    /* FIX: Ensure the image fits inside the box entirely */
+                    width: 120px; 
+                    height: 150px; /* Increased height for better view of person image */
+                    object-fit: contain; /* CRUCIAL: Ensures the whole image is visible */
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    display: none;
+                    margin-top: 5px;
+                    padding: 5px;
+                    background-color: #f9f9f9;
+                }
+                #vton-widget button {
+                    width: 100%;
+                    padding: 15px;
+                    margin-top: 20px;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    transition: background-color 0.3s, transform 0.1s;
+                }
+                #vton-widget button:hover:not(:disabled) {
+                    background-color: #43a047;
+                    transform: translateY(-1px);
+                }
+                #vton-widget button:disabled {
+                    background-color: #a5d6a7;
+                    cursor: not-allowed;
+                }
+                #vton-result-area {
+                    margin-top: 30px;
+                    text-align: center;
+                    padding-top: 15px;
+                    border-top: 1px solid #f0f0f0;
+                }
+                #vton-result-area h4 {
+                    color: #1a1a1a;
+                    margin-bottom: 15px;
+                }
+                #vton-result-image {
+                    max-width: 100%;
+                    height: auto;
+                    min-height: 200px;
+                    border: 3px solid #4CAF50;
+                    border-radius: 10px;
+                    display: none;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                }
+                #vton-status-message {
+                    margin-top: 15px;
+                    padding: 10px;
+                    border-radius: 6px;
+                    text-align: center;
+                    font-size: 1em;
+                }
+                .status-info { color: #007bff; background-color: #e6f3ff; }
+                .status-success { color: #2ecc71; background-color: #e6fff0; }
+                .status-error { color: #e74c3c; background-color: #ffe6e6; }
+            </style>
+            <div id="vton-widget">
+                <h3>🛍️ Virtual Try-On</h3>
+                <div id="vton-status-message" class="status-info">Ready. (Max 10MB per image)</div>
+
+                <div class="input-group">
+                    <label for="personImageFile">1. Upload Your Photo (JPG/PNG):</label>
+                    <input type="file" id="personImageFile" accept="image/jpeg, image/png">
+                </div>
+
+                <div class="input-group">
+                    <label for="clothImageFile">2. Upload Cloth/Garment Photo (JPG/PNG):</label>
+                    <input type="file" id="clothImageFile" accept="image/jpeg, image/png">
+                </div>
+
+                <div class="preview-container">
+                    <div class="preview-wrapper">
+                        <img id="personImagePreview" class="image-preview" src="" alt="Your Photo Preview">
+                        <small style="margin-top: 5px; color: #555;">Your Photo</small>
+                    </div>
+                    <div class="preview-wrapper">
+                        <img id="clothImagePreview" class="image-preview" src="" alt="Cloth Preview">
+                        <small style="margin-top: 5px; color: #555;">Cloth Photo</small>
+                    </div>
+                </div>
+
+                <button id="vton-generate-button">Generate Try-On Image</button>
+
+                <div id="vton-result-area">
+                    <h4>Try-On Result:</h4>
+                    <img id="vton-result-image" src="" alt="Try-on Result" style="display:none;">
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Main function to initialize the widget.
+     */
+    function initializeWidget() {
+        const rootElement = document.getElementById("vton");
+        if (!rootElement) {
+            console.error("VTON Widget: Could not find root element with ID 'vton'.");
+            return;
+        }
+
+        // Render the widget UI
+        rootElement.innerHTML = getWidgetHtml();
+
+        // Get elements
+        const personImageFileInput = document.getElementById("personImageFile");
+        const clothImageFileInput = document.getElementById("clothImageFile");
+        const personImagePreview = document.getElementById("personImagePreview");
+        const clothImagePreview = document.getElementById("clothImagePreview");
+        const generateButton = document.getElementById("vton-generate-button");
+        const statusMessage = document.getElementById("vton-status-message");
+        const resultImage = document.getElementById("vton-result-image");
+
+        // Set up real-time image previews
+        setupImagePreview(personImageFileInput, personImagePreview);
+        setupImagePreview(clothImageFileInput, clothImagePreview);
+
+        // Event listener for the generate button
+        generateButton.addEventListener("click", async () => {
+            const personFile = personImageFileInput.files[0];
+            const clothFile = clothImageFileInput.files[0];
+
+            // 1. Basic Validation
+            if (!personFile) {
+                statusMessage.textContent = "Error: Please upload your photo.";
+                statusMessage.className = 'status-error';
+                return;
+            }
+            if (!clothFile) {
+                statusMessage.textContent = "Error: Please upload the cloth photo.";
+                statusMessage.className = 'status-error';
+                return;
+            }
+
+            // 2. Start Processing
+            generateButton.disabled = true;
+            statusMessage.textContent = "Uploading and processing... This may take up to 3 minutes.";
+            statusMessage.className = 'status-info';
+            resultImage.style.display = 'none';
+            resultImage.src = ""; // Clear previous result
+
+            try {
+                // 3. Convert images to Base64 concurrently
+                const [personImageBase64, garmentImageBase64] = await Promise.all([
+                    fileToBase64(personFile),
+                    fileToBase64(clothFile)
+                ]);
+                
+                // 4. API Call
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        personImageBase64: personImageBase64,
+                        garmentImageBase64: garmentImageBase64
+                    })
+                });
+
+                const data = await response.json();
+
+                // 5. Handle Response
+                if (response.ok && data.status === 'success' && data.processed_image_base64) {
+                    const base64Image = data.processed_image_base64;
+                    resultImage.src = `data:image/jpeg;base64,${base64Image}`;
+                    resultImage.style.display = 'block';
+                    statusMessage.textContent = "Success! Image generated.";
+                    statusMessage.className = 'status-success';
+                } else {
+                    // Handle API errors (400, 429, 500, 504 etc.)
+                    const errorMsg = data.message || data.errorDetails || "An unknown error occurred during processing.";
+                    statusMessage.textContent = `Error: ${errorMsg}`;
+                    statusMessage.className = 'status-error';
+                }
+
+            } catch (error) {
+                console.error("VTON Widget Fetch Error:", error);
+                statusMessage.textContent = `Network/System Error: Could not connect to the server.`;
+                statusMessage.className = 'status-error';
+            } finally {
+                generateButton.disabled = false;
+            }
+        });
+    }
+
+    // Run the initialization when the DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeWidget);
     } else {
         initializeWidget();
     }
-
-    function initializeLegacyWidget() {
-        const legacyContainer = document.getElementById('vton');
-        if (legacyContainer && !legacyContainer.dataset.initialized) {
-            legacyContainer.dataset.initialized = 'true';
-            new VirtualTryOnWidget('vton');
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeLegacyWidget);
-    } else {
-        initializeLegacyWidget();
-    }
-
-    window.VirtualTryOn = {
-        Widget: VirtualTryOnWidget,
-        config: CONFIG
-    };
 })();
