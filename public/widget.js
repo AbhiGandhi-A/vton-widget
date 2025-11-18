@@ -2,7 +2,7 @@
     'use strict';
 
     const CONFIG = {
-        apiBaseUrl: window.VTON_API_URL || 'http://localhost:3000',
+        apiBaseUrl: window.VTON_API_URL || 'vton-widget.vercel.app',
         timeout: 180000 // Client-side timeout for fetch
     };
 
