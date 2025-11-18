@@ -10,26 +10,31 @@
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       min-height: 100vh;
       padding: 40px 20px;
     }
+
     .container {
       max-width: 1200px;
       margin: 0 auto;
     }
+
     h1 {
       color: white;
       margin-bottom: 10px;
       font-size: 32px;
     }
+
     .subtitle {
       color: #a0aec0;
       margin-bottom: 40px;
       font-size: 16px;
     }
+
     .demo-section {
       background: white;
       border-radius: 12px;
@@ -37,29 +42,35 @@
       margin-bottom: 30px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     }
+
     .demo-section h2 {
       color: #1a1a2e;
       margin-bottom: 20px;
       font-size: 24px;
     }
+
     .demo-section h3 {
       color: #2d3748;
       margin-top: 20px;
       margin-bottom: 10px;
       font-size: 16px;
     }
+
     .demo-section p {
       color: #4a5568;
       line-height: 1.6;
       margin-bottom: 10px;
     }
+
     .demo-section a {
       color: #667eea;
       text-decoration: none;
     }
+
     .demo-section a:hover {
       text-decoration: underline;
     }
+
     .code-block {
       background: #f5f5f5;
       border: 1px solid #e0e0e0;
@@ -72,6 +83,7 @@
       color: #333;
       word-break: break-all;
     }
+
     .demo-content {
       border: 2px dashed #cbd5e0;
       border-radius: 8px;
@@ -80,6 +92,7 @@
       min-height: 600px;
       background: #fafafa;
     }
+
     .info-box {
       background: #edf2f7;
       border-left: 4px solid #667eea;
@@ -87,12 +100,23 @@
       margin-bottom: 15px;
       border-radius: 4px;
     }
+
     .info-box strong {
       color: #667eea;
     }
-    ul { margin-left: 20px; }
-    ol { margin-left: 20px; }
-    li { margin-bottom: 8px; }
+
+    ul {
+      margin-left: 20px;
+    }
+
+    ol {
+      margin-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
     code {
       background: #f0f0f0;
       padding: 2px 6px;
@@ -105,15 +129,17 @@
   <div class="container">
     <h1>Virtual Try-On Widget</h1>
     <p class="subtitle">Embed this widget on any website with a single line of code</p>
-    
+
     <div class="demo-section">
       <h2>Quick Start</h2>
       <p><strong>Step 1:</strong> Add this script tag to your HTML:</p>
       <div class="code-block">&lt;script src="https://your-domain.vercel.app/widget.js"&gt;&lt;/script&gt;</div>
       <p><strong>Step 2:</strong> Add this div where you want the widget to appear:</p>
       <div class="code-block">&lt;div id="vton"&gt;&lt;/div&gt;</div>
+      <p><strong>Alternative - Multiple Widgets:</strong> Use data attribute:</p>
+      <div class="code-block">&lt;div id="widget-1" data-vton-widget&gt;&lt;/div&gt;<br>&lt;div id="widget-2" data-vton-widget&gt;&lt;/div&gt;</div>
       <div class="info-box">
-        <strong>Note:</strong> The widget will automatically initialize when the page loads!
+        <strong>Note:</strong> The widget will automatically initialize when the page loads. No additional configuration needed!
       </div>
     </div>
 
@@ -129,11 +155,63 @@
       <ul style="color: #4a5568; line-height: 1.8;">
         <li>Upload personal photo</li>
         <li>Upload clothing image</li>
-        <li>AI-powered virtual try-on</li>
-        <li>Real-time processing</li>
-        <li>Responsive design</li>
-        <li>Works on any website</li>
+        <li>AI-powered virtual try-on using Hugging Face IDM-VTON</li>
+        <li>Real-time processing with progress indicators</li>
+        <li>Responsive design for mobile and desktop</li>
+        <li>Zero-setup embedding - just add the script</li>
+        <li>Multiple widgets on same page</li>
+        <li>Works on Vercel and localhost</li>
       </ul>
+    </div>
+
+    <div class="demo-section">
+      <h2>Setup Instructions</h2>
+      <h3>1. Get Hugging Face Token</h3>
+      <p>Go to <a href="https://huggingface.co/settings/tokens" target="_blank">https://huggingface.co/settings/tokens</a> and create a token.</p>
+
+      <h3>2. Add Environment Variables</h3>
+      <p>Create a <code>.env</code> file in your project root:</p>
+      <div class="code-block">HF_TOKEN=your_token_here<br>PORT=3000<br>API_URL=http://localhost:3000</div>
+
+      <h3>3. Install Dependencies</h3>
+      <div class="code-block">npm install</div>
+
+      <h3>4. Run the Server</h3>
+      <div class="code-block">npm run dev</div>
+
+      <h3>5. Open in Browser</h3>
+      <div class="code-block">http://localhost:3000</div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Deploy to Vercel</h2>
+      <p>Push your code to GitHub and deploy:</p>
+      <ol style="color: #4a5568; line-height: 1.8;">
+        <li>Connect your GitHub repo to Vercel</li>
+        <li>Add <code>HF_TOKEN</code> to Environment Variables in Vercel dashboard</li>
+        <li>Set <code>API_URL</code> to your Vercel domain (e.g., https://your-app.vercel.app)</li>
+        <li>Deploy and enjoy!</li>
+      </ol>
+    </div>
+
+    <div class="demo-section">
+      <h2>Integration Example</h2>
+      <p>Complete HTML example to embed on any website:</p>
+      <div class="code-block">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;<br>&nbsp;&nbsp;&lt;title&gt;My Store&lt;/title&gt;<br>&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to My Store&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;!-- Virtual Try-On Widget --&gt;<br>&nbsp;&nbsp;&lt;script src="https://your-domain.vercel.app/widget.js"&gt;&lt;/script&gt;<br>&nbsp;&nbsp;&lt;div id="vton"&gt;&lt;/div&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</div>
+    </div>
+
+    <div class="demo-section">
+      <h2>API Documentation</h2>
+      <h3>POST /api/vton/process</h3>
+      <p>Process images for virtual try-on</p>
+      <p><strong>Request Body:</strong></p>
+      <div class="code-block">{<br>  "userImage": "base64_encoded_image",<br>  "clothImage": "base64_encoded_image"<br>}</div>
+      <p><strong>Response:</strong></p>
+      <div class="code-block">{<br>  "status": "success",<br>  "result": "base64_encoded_result_image",<br>  "timestamp": "2024-11-18T..."<br>}</div>
+
+      <h3>GET /api/health</h3>
+      <p>Health check endpoint</p>
+      <div class="code-block">{<br>  "status": "ok",<br>  "timestamp": "2024-11-18T...",<br>  "hf_token_configured": true<br>}</div>
     </div>
   </div>
 

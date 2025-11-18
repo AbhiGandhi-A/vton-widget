@@ -1,14 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "echo 'Build complete'",
-  "env": {
-    "HF_TOKEN": "@hf_token"
-  },
-  "public": true,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
     }
   ]
 }

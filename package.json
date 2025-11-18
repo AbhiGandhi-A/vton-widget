@@ -1,7 +1,7 @@
 {
   "name": "virtual-tryon-widget",
   "version": "1.0.0",
-  "description": "Embeddable Virtual Try-On Widget with Hugging Face Gradio",
+  "description": "Embeddable Virtual Try-On Widget with Hugging Face API",
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -19,9 +19,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "axios": "^1.6.0",
     "dotenv": "^16.3.1",
-    "form-data": "^4.0.5",
+    "@gradio/client": "^1.0.0",
     "path": "0.12.7",
     "os": "0.1.2",
     "fs": "0.0.1-security",
@@ -36,7 +35,7 @@
     "tailwindcss-animate": "1.0.7"
   },
   "devDependencies": {
-    "@types/react": "19.2.5",
+    "@types/react": "19.2.6",
     "@types/react-dom": "19.2.3",
     "@types/node": "24.10.1",
     "tailwindcss": "4.1.17",
