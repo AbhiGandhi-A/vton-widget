@@ -3,218 +3,320 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Virtual Try-On Widget</title>
+  <title>Virtual Try-On Widget Demo - All Methods</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      color: white;
-      margin-bottom: 10px;
-      font-size: 32px;
-    }
-
-    .subtitle {
-      color: #a0aec0;
-      margin-bottom: 40px;
-      font-size: 16px;
-    }
-
-    .demo-section {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      margin-bottom: 30px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    .demo-section h2 {
-      color: #1a1a2e;
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-
-    .demo-section h3 {
-      color: #2d3748;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    .demo-section p {
-      color: #4a5568;
-      line-height: 1.6;
-      margin-bottom: 10px;
-    }
-
-    .demo-section a {
-      color: #667eea;
-      text-decoration: none;
-    }
-
-    .demo-section a:hover {
-      text-decoration: underline;
-    }
-
-    .code-block {
-      background: #f5f5f5;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-      overflow-x: auto;
-      font-family: monospace;
-      font-size: 14px;
+    /* ------------------------------------------- */
+    /* 1. Base Page & Layout Styling */
+    /* ------------------------------------------- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8edf3 100%); 
+      min-height: 100vh; 
+      padding: 40px 20px; 
       color: #333;
-      word-break: break-all;
     }
-
-    .demo-content {
-      border: 2px dashed #cbd5e0;
-      border-radius: 8px;
+    .container { 
+      max-width: 1400px; 
+      margin: 0 auto; 
+    }
+    h1 { 
+      color: #1a1a2e; 
+      margin-bottom: 5px; 
+      font-size: 40px; 
+      text-align: center; 
+      font-weight: 700;
+    }
+    .subtitle { 
+      color: #555; 
+      margin-bottom: 40px; 
+      font-size: 18px; 
+      text-align: center;
+    }
+    a { color: #007bff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    /* ------------------------------------------- */
+    /* 2. Grid and Live Demo Styling */
+    /* ------------------------------------------- */
+    .widget-grid {
+      display: grid;
+      grid-template-areas:
+        "method1 live method3"
+        "method2 live method4";
+      grid-template-columns: 1fr 500px 1fr;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    #live-demo-area {
+      grid-area: live;
+      background: #ffffff;
+      border-radius: 18px;
       padding: 30px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+      border: 5px solid #4CAF50;
+      animation: pulse-border 2s infinite alternate;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #live-demo-area h2 {
+        color: #4CAF50;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    #live-demo-area p {
+        color: #777;
+    }
+    
+    /* ------------------------------------------- */
+    /* 3. Method Card Styling */
+    /* ------------------------------------------- */
+    .method-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid #e0e0e0;
+    }
+    .method-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+    .method-card h3 { 
+      margin-top: 0; 
+      padding-bottom: 10px; 
+      font-size: 1.5em; 
+      font-weight: 600;
+    }
+    
+    /* ------------------------------------------- */
+    /* 4. Code & Output Simulation */
+    /* ------------------------------------------- */
+    .code-block { 
+      background: #2d2d2d; 
+      color: #f8f8f2;
+      border-radius: 8px; 
+      padding: 15px; 
+      margin: 15px 0; 
+      font-family: 'Fira Code', Consolas, monospace; 
+      font-size: 13px; 
+      overflow-x: auto;
+      line-height: 1.4;
+    }
+    
+    .output-box {
       margin-top: 20px;
-      min-height: 600px;
-      background: #fafafa;
+      padding: 18px;
+      border-radius: 10px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     }
-
-    .info-box {
-      background: #edf2f7;
-      border-left: 4px solid #667eea;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 4px;
+    .output-text { flex: 1; font-size: 0.95em; line-height: 1.5; }
+    .output-text strong { display: block; margin-bottom: 5px; font-size: 1.1em; font-weight: 700; }
+    
+    /* Output Simulation Box */
+    .output-image-sim { 
+      width: 120px; 
+      height: 120px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      text-align: center; 
+      border-radius: 8px; 
+      font-size: 0.8em; 
+      padding: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
     }
+    
+    /* ------------------------------------------- */
+    /* 5. Method-Specific Colors */
+    /* ------------------------------------------- */
+    .method-1-color h3 { color: #007bff; }
+    .method-1-output { background-color: #e6f7ff; border: 2px solid #007bff; }
+    .method-1-output .output-image-sim { border: 2px dashed #007bff; color: #007bff; background-color: #f0f8ff; }
 
-    .info-box strong {
-      color: #667eea;
-    }
+    .method-2-color h3 { color: #4CAF50; }
+    .method-2-output { background-color: #e6fff0; border: 2px solid #4CAF50; }
+    .method-2-output .output-image-sim { border: 2px dashed #4CAF50; background-color: #f0f8ff; color: #4CAF50; }
 
-    ul {
-      margin-left: 20px;
-    }
+    .method-3-color h3 { color: #ff9800; }
+    .method-3-output { background-color: #fff8e1; border: 2px solid #ff9800; }
+    .method-3-output .output-image-sim { border: 2px dashed #ff9800; color: #ff9800; background-color: #fffaf0; }
 
-    ol {
-      margin-left: 20px;
-    }
-
-    li {
-      margin-bottom: 8px;
-    }
-
-    code {
-      background: #f0f0f0;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: monospace;
+    .method-4-color h3 { color: #3f51b5; }
+    .method-4-output { background-color: #e8eaf6; border: 2px solid #3f51b5; }
+    .method-4-output .output-image-sim { border: 2px dashed #3f51b5; background-color: #f5f5ff; color: #3f51b5; }
+    
+    /* ------------------------------------------- */
+    /* 6. Animations */
+    /* ------------------------------------------- */
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); }
+      100% { box-shadow: 0 0 30px rgba(76, 175, 80, 0.8); }
     }
   </style>
+
+  <script src="https://vton-widget-k4hh.onrender.com/widget.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Virtual Try-On Widget</h1>
-    <p class="subtitle">Embed this widget on any website with a single line of code</p>
+    <h1>👕 Virtual Try-On Widget Deployment Guide</h1>
+    <p class="subtitle">Four easy ways to integrate the VTON Widget into your e-commerce platform.</p>
 
-    <div class="demo-section">
-      <h2>Quick Start</h2>
-      <p><strong>Step 1:</strong> Add this script tag to your HTML:</p>
-      <div class="code-block">&lt;script src="https://your-domain.vercel.app/widget.js"&gt;&lt;/script&gt;</div>
-      <p><strong>Step 2:</strong> Add this div where you want the widget to appear:</p>
-      <div class="code-block">&lt;div id="vton"&gt;&lt;/div&gt;</div>
-      <p><strong>Alternative - Multiple Widgets:</strong> Use data attribute:</p>
-      <div class="code-block">&lt;div id="widget-1" data-vton-widget&gt;&lt;/div&gt;<br>&lt;div id="widget-2" data-vton-widget&gt;&lt;/div&gt;</div>
-      <div class="info-box">
-        <strong>Note:</strong> The widget will automatically initialize when the page loads. No additional configuration needed!
+    <div class="widget-grid">
+      
+      <div id="method-1-card" class="method-card method-1-color">
+        <h3>1. Programmatic Initialization (`VTON.init`)</h3>
+        <p>Gives you **maximum control**, specifying both the custom container ID and the target image selector using JavaScript.</p>
+        
+        <p><strong>HTML Setup:</strong></p>
+        <div class="code-block">
+          &lt;img id="product-main-image-1" src="/placeholder-cloth.jpg"&gt;<br>
+          &lt;div id="vton-custom-root"&gt;&lt;/div&gt;
+        </div>
+        
+        <p><strong>JavaScript Trigger:</strong></p>
+        <div class="code-block">
+          VTON.init({ <br>
+            &nbsp;&nbsp;root: "vton-custom-root",<br>
+            &nbsp;&nbsp;target: "#product-main-image-1" <br>
+          });
+        </div>
+
+        <div class="output-box method-1-output">
+          <div class="output-text">
+            <strong>Visual Result: External Target Update</strong>
+            <p>The **widget UI** renders inside `#vton-custom-root`. The try-on result **replaces the source (`src`)** of the separate image element at `#product-main-image-1`.</p>
+          </div>
+          <div class="output-image-sim">
+            Image at #product-main-image-1 is UPDATED
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="demo-section">
-      <h2>Live Demo</h2>
-      <div class="demo-content">
+      <div id="live-demo-area">
+        <h2>Live Demo: Method 2 (Default)</h2>
+        <p style="margin-bottom: 20px;">The simplest setup: The script automatically finds and initializes here.</p>
         <div id="vton"></div>
       </div>
+
+      <div id="method-3-card" class="method-card method-3-color">
+        <h3>3. Attribute-Based Targeting</h3>
+        <p>Uses the automatic default loading (`id="vton"` or any custom ID) combined with the declarative `data-target-selector` attribute to set an external target.</p>
+
+        <p><strong>HTML Setup:</strong></p>
+        <div class="code-block">
+          &lt;img id="product-main-image-3" src="/placeholder-cloth.jpg"&gt;<br>
+          &lt;div id="vton" data-target-selector="#product-main-image-3"&gt;&lt;/div&gt;
+        </div>
+        
+        <p><strong>JS Trigger:</strong></p>
+        <div class="code-block">
+          (None required. The script reads the attribute on load.)
+        </div>
+
+        <div class="output-box method-3-output">
+          <div class="output-text">
+            <strong>Visual Result: External Target Update</strong>
+            <p>The **widget UI** appears inside `#vton`. The try-on result **replaces the source (`src`)** of the image element at `#product-main-image-3`.</p>
+          </div>
+          <div class="output-image-sim">
+            Image at #product-main-image-3 is UPDATED
+          </div>
+        </div>
+      </div>
+
+      <div id="method-2-card" class="method-card method-2-color">
+        <h3>2. Automatic Default (`id="vton"`)</h3>
+        <p>The **easiest setup**. The widget script automatically searches for and initializes the UI inside the first element it finds with the ID `vton`.</p>
+
+        <p><strong>HTML Setup:</strong></p>
+        <div class="code-block">
+          &lt;div id="vton"&gt;&lt;/div&gt;
+        </div>
+        
+        <p><strong>JS Trigger:</strong></p>
+        <div class="code-block">
+          (None required. The script auto-initializes on page load.)
+        </div>
+
+        <div class="output-box method-2-output">
+          <div class="output-text">
+            <strong>Visual Result: Internal Display</strong>
+            <p>The full **interactive widget UI** is visible inside `#vton`. The result image is displayed as a new `&lt;img&gt;` element **within the widget area**, below the "Generate" button.</p>
+          </div>
+          <div class="output-image-sim">
+            Result SHOWN INSIDE Widget UI
+          </div>
+        </div>
+      </div>
+
+      <div id="method-4-card" class="method-card method-4-color">
+        <h3>4. Headless Processing (`VTON.process`)</h3>
+        <p>Ideal for batch processing or triggering try-on from a custom interface. It **does not render the interactive UI**.</p>
+
+        <p><strong>HTML Setup:</strong></p>
+        <div class="code-block">
+          &lt;img id="try-on-result-4" src="/placeholder-model.jpg"&gt;<br>
+          &lt;button onclick="startTryOn()"&gt;Process&lt;/button&gt;
+        </div>
+        
+        <p><strong>JavaScript Trigger:</strong></p>
+        <div class="code-block">
+          VTON.process({<br>
+            &nbsp;&nbsp;personImageUrl: '...',<br>
+            &nbsp;&nbsp;garmentImageUrl: '...',<br>
+            &nbsp;&nbsp;target: '#try-on-result-4'<br>
+          });
+        </div>
+
+        <div class="output-box method-4-output">
+          <div class="output-text">
+            <strong>Visual Result: External Target Update (No UI)</strong>
+            <p>**No widget UI** is shown. A temporary **floating status message** tracks progress. The result image **replaces the source (`src`)** of the image at `#try-on-result-4`.</p>
+          </div>
+          <div class="output-image-sim">
+            NO WIDGET UI. Status Box Floats.
+          </div>
+        </div>
+      </div>
+
     </div>
+    
+    <hr>
+    
+    <div class="container" style="max-width: 800px; margin-top: 50px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h2 style="color: #1a1a2e; margin-bottom: 20px;">Local Server Setup ⚙️</h2>
+        <p>These instructions are for running the **server** (which hosts the widget.js and the API) locally.</p>
+        
+        <h3>1. Get Hugging Face Token</h3>
+        <p>A **Hugging Face Token** with read access is required for the backend API to function.</p>
 
-    <div class="demo-section">
-      <h2>Features</h2>
-      <ul style="color: #4a5568; line-height: 1.8;">
-        <li>Upload personal photo</li>
-        <li>Upload clothing image</li>
-        <li>AI-powered virtual try-on using Hugging Face IDM-VTON</li>
-        <li>Real-time processing with progress indicators</li>
-        <li>Responsive design for mobile and desktop</li>
-        <li>Zero-setup embedding - just add the script</li>
-        <li>Multiple widgets on same page</li>
-        <li>Works on Vercel and localhost</li>
-      </ul>
-    </div>
+        <h3>2. Environment Variables</h3>
+        <p>Create a <code>.env</code> file in your project root:</p>
+        <div class="code-block">
+          HF_TOKEN=your_hugging_face_token_here<br>
+          PORT=3000<br>
+          API_URL=http://localhost:3000
+        </div>
 
-    <div class="demo-section">
-      <h2>Setup Instructions</h2>
-      <h3>1. Get Hugging Face Token</h3>
-      <p>Go to <a href="https://huggingface.co/settings/tokens" target="_blank">https://huggingface.co/settings/tokens</a> and create a token.</p>
+        <h3>3. Run the Server</h3>
+        <div class="code-block">
+          npm install<br>
+          npm run dev
+        </div>
 
-      <h3>2. Add Environment Variables</h3>
-      <p>Create a <code>.env</code> file in your project root:</p>
-      <div class="code-block">HF_TOKEN=your_token_here<br>PORT=3000<br>API_URL=http://localhost:3000</div>
-
-      <h3>3. Install Dependencies</h3>
-      <div class="code-block">npm install</div>
-
-      <h3>4. Run the Server</h3>
-      <div class="code-block">npm run dev</div>
-
-      <h3>5. Open in Browser</h3>
-      <div class="code-block">http://localhost:3000</div>
-    </div>
-
-    <div class="demo-section">
-      <h2>Deploy to Vercel</h2>
-      <p>Push your code to GitHub and deploy:</p>
-      <ol style="color: #4a5568; line-height: 1.8;">
-        <li>Connect your GitHub repo to Vercel</li>
-        <li>Add <code>HF_TOKEN</code> to Environment Variables in Vercel dashboard</li>
-        <li>Set <code>API_URL</code> to your Vercel domain (e.g., https://your-app.vercel.app)</li>
-        <li>Deploy and enjoy!</li>
-      </ol>
-    </div>
-
-    <div class="demo-section">
-      <h2>Integration Example</h2>
-      <p>Complete HTML example to embed on any website:</p>
-      <div class="code-block">&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;<br>&nbsp;&nbsp;&lt;title&gt;My Store&lt;/title&gt;<br>&lt;/head&gt;<br>&lt;body&gt;<br>&nbsp;&nbsp;&lt;h1&gt;Welcome to My Store&lt;/h1&gt;<br>&nbsp;&nbsp;&lt;!-- Virtual Try-On Widget --&gt;<br>&nbsp;&nbsp;&lt;script src="https://your-domain.vercel.app/widget.js"&gt;&lt;/script&gt;<br>&nbsp;&nbsp;&lt;div id="vton"&gt;&lt;/div&gt;<br>&lt;/body&gt;<br>&lt;/html&gt;</div>
-    </div>
-
-    <div class="demo-section">
-      <h2>API Documentation</h2>
-      <h3>POST /api/vton/process</h3>
-      <p>Process images for virtual try-on</p>
-      <p><strong>Request Body:</strong></p>
-      <div class="code-block">{<br>  "userImage": "base64_encoded_image",<br>  "clothImage": "base64_encoded_image"<br>}</div>
-      <p><strong>Response:</strong></p>
-      <div class="code-block">{<br>  "status": "success",<br>  "result": "base64_encoded_result_image",<br>  "timestamp": "2024-11-18T..."<br>}</div>
-
-      <h3>GET /api/health</h3>
-      <p>Health check endpoint</p>
-      <div class="code-block">{<br>  "status": "ok",<br>  "timestamp": "2024-11-18T...",<br>  "hf_token_configured": true<br>}</div>
+        <h3>4. Access Demo</h3>
+        <div class="code-block">
+          Open http://localhost:3000 in your browser.
+        </div>
     </div>
   </div>
-
-  <script src="/widget.js"></script>
+  <script src="https://vton-widget-k4hh.onrender.com/widget.js"></script>
 </body>
 </html>
