@@ -3,22 +3,71 @@
     // VTON_API_URL is injected by the server.js on the fly.
     const API_ENDPOINT = (window.VTON_API_URL || "https://vton-widget-k4hh.onrender.com") + "/api/virtual-tryon/process";
     
-    // Global variable to store the target selector from VTON.init()
+    // Global variables for the standard widget UI
     let globalTargetSelector = null; 
-    let statusElement = null; // Reference to the status message element
+    let widgetStatusElement = null; // Status for the main interactive widget
 
     // ------------------------------------------------------------------
     // CORE UTILITIES
     // ------------------------------------------------------------------
 
     /**
+     * Creates or updates a unique floating status message for a given ID/Process.
+     * This is essential for distinguishing status updates when VTON.process is
+     * called multiple times concurrently.
+     * @param {string} processId - A unique ID for this process (e.g., a target selector or custom ID).
+     * @param {string} message - The status message.
+     * @param {string} className - 'status-info', 'status-success', or 'status-error'.
+     * @param {boolean} isFloating - Whether to display as a fixed floating message.
+     */
+    function showStatus(processId, message, className, isFloating = true) {
+        const uniqueId = `vton-status-${processId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        let statusElement = document.getElementById(uniqueId);
+        
+        if (!statusElement) {
+            statusElement = document.createElement('div');
+            statusElement.id = uniqueId;
+            document.body.appendChild(statusElement);
+
+            if (isFloating) {
+                // Style for the floating status message (Method 4)
+                statusElement.style.cssText = `
+                    position: fixed; 
+                    bottom: 10px; 
+                    right: 10px; 
+                    z-index: 1000; 
+                    padding: 10px; 
+                    border-radius: 5px; 
+                    box-shadow: 0 0 10px rgba(0,0,0,0.2); 
+                    font-family: sans-serif; 
+                    transition: all 0.3s;
+                    max-width: 300px;
+                `;
+            } else {
+                // Style for the main widget status (Method 1-3)
+                 statusElement.style.cssText = 'margin-top: 15px; padding: 10px; border-radius: 6px; text-align: center; font-size: 1em;';
+            }
+        }
+        
+        statusElement.textContent = message;
+        statusElement.className = className;
+        statusElement.style.display = 'block';
+
+        // Auto-hide success/error messages for headless processing
+        if (isFloating && (className === 'status-success' || className === 'status-error')) {
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 8000);
+        }
+    }
+
+
+    /**
      * Converts a File object to a Base64 string (data part only).
-     * 🐛 FIX: Added logic to resolve only the Base64 data part (after the comma).
      */
      function fileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            // Resolve only the Base64 data part (after the comma)
             reader.onload = () => resolve(reader.result.split(',')[1]); 
             reader.onerror = error => reject(error);
             reader.readAsDataURL(file);
@@ -27,9 +76,6 @@
 
     /**
      * Fetches an image URL and converts it to a Base64 string (data part only).
-     * @param {string} url - The image URL.
-     * @returns {Promise<string>} Base64 data (without the data:image prefix).
-     * 🐛 FIX: The result of fileToBase64 now only contains the data part.
      */
     function urlToBase64(url) {
         return fetch(url)
@@ -44,7 +90,6 @@
 
     /**
      * Displays a preview of the selected image.
-     * ✅ FIX: This function was missing and caused the ReferenceError.
      */
     function setupImagePreview(fileInput, previewElement) {
         fileInput.addEventListener('change', (event) => {
@@ -67,26 +112,30 @@
 
     /**
      * Handles the core logic of calling the VTON API and updating the result image.
+     * @param {string} processId - Unique ID for status tracking.
+     * @param {string} personImageBase64 - Base64 data of the person image.
+     * @param {string} garmentImageBase64 - Base64 data of the garment image.
+     * @param {HTMLElement} finalResultImage - The <img> element to update.
+     * @param {boolean} isHeadless - True if called from VTON.process (Method 4).
+     * @param {HTMLElement | null} generateButton - The button to disable/enable (null if headless).
      */
-    async function processTryOn(personImageBase64, garmentImageBase64, finalResultImage, statusDisplay, generateButton) {
+    async function processTryOn(processId, personImageBase64, garmentImageBase64, finalResultImage, isHeadless, generateButton) {
+        const statusUpdater = (message, className) => showStatus(processId, message, className, isHeadless);
+
         if (generateButton) generateButton.disabled = true;
         
-        statusDisplay.textContent = "Uploading and processing... This may take up to 3 minutes.";
-        statusDisplay.className = 'status-info';
+        statusUpdater("Uploading and processing... This may take up to 3 minutes.", 'status-info');
         
-        // Hide result initially, especially if it's the external target image
+        // Hide result initially
         finalResultImage.src = "";
-        if (finalResultImage.id === 'vton-result-image' && finalResultImage.style) {
-            finalResultImage.style.display = 'none';
-        }
 
         try {
             const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    personImageBase64: personImageBase64, // Base64 data part only
-                    garmentImageBase64: garmentImageBase64 // Base64 data part only
+                    personImageBase64: personImageBase64,
+                    garmentImageBase64: garmentImageBase64
                 })
             });
 
@@ -99,18 +148,18 @@
                 finalResultImage.src = `data:image/jpeg;base64,${base64Image}`;
                 finalResultImage.style.display = 'block'; 
 
-                statusDisplay.textContent = "Success! Image generated.";
-                statusDisplay.className = 'status-success';
+                statusUpdater("Success! Image generated.", 'status-success');
+                return finalResultImage.src; // Return URL for optional external use
             } else {
                 const errorMsg = data.message || data.errorDetails || `API Error: ${response.statusText}`;
-                statusDisplay.textContent = `Error: ${errorMsg}`;
-                statusDisplay.className = 'status-error';
+                statusUpdater(`Error: ${errorMsg}`, 'status-error');
+                throw new Error(errorMsg);
             }
 
         } catch (error) {
-            console.error("VTON Widget Fetch Error:", error);
-            statusDisplay.textContent = `Network/System Error: Could not connect to the server or process request.`;
-            statusDisplay.className = 'status-error';
+            console.error(`VTON Process [${processId}] Fetch Error:`, error);
+            statusUpdater(`Network/System Error: Could not connect to the server or process request.`, 'status-error');
+            throw error; // Re-throw to be caught by VTON.process caller
         } finally {
             if (generateButton) generateButton.disabled = false;
         }
@@ -118,10 +167,10 @@
 
 
     /**
-     * Finds the single target image element. (Logic unchanged)
+     * Finds the single target image element.
      */
     function determineTargetElement(rootElement) {
-        // 1. Priority 1: VTON.init({ target: selector })
+        // ... (Target determination logic remains the same for the widget UI)
         if (globalTargetSelector) {
             const externalElement = document.querySelector(globalTargetSelector);
             if (externalElement && externalElement.tagName === 'IMG') {
@@ -129,7 +178,6 @@
             }
         }
 
-        // 2. Priority 2: data-target-selector on the VTON div
         const selectorAttribute = rootElement.getAttribute('data-target-selector') || rootElement.getAttribute('data-target-id');
         if (selectorAttribute) {
             const externalElement = document.querySelector(selectorAttribute);
@@ -138,19 +186,17 @@
             }
         }
 
-        // 3. Priority 3: data-vton-target on the image itself
         const imageTarget = document.querySelector('img[data-vton-target]');
         if (imageTarget) {
             return imageTarget;
         }
 
-        // 4. Fallback: Internal display
         return null;
     }
 
 
     /**
-     * Creates and returns the HTML structure for the widget. (Logic unchanged)
+     * Creates and returns the HTML structure for the widget.
      */
     function getWidgetHtml(externalTarget) {
         const resultSection = externalTarget
@@ -216,52 +262,45 @@
      * Main function to initialize the widget.
      */
     function initializeWidget() {
-        // The default root check logic
         let rootElement = document.getElementById("vton");
         
-        // Check if VTON.init was called with a custom root ID (Priority over default)
-        // Note: The global logic for VTON.init handles checking for options.root
-        // and setting up the listener. If VTON.init was not called, we use the default.
-        
+        const rootId = rootElement ? 'vton' : (document.currentScript ? document.currentScript.getAttribute('data-root-id') : 'vton');
+
         if (!rootElement) {
-             // If the default 'vton' container is missing, we check if VTON.init() ran
-             // and set the root based on that, otherwise we rely on the options handling 
-             // in VTON.init below. For now, we only log the default warning if statusElement
-             // hasn't been created by VTON.process().
-            if (!statusElement) { 
-                console.warn("VTON Widget container ('#vton') not found. Programmatic use via VTON.process() is still available.");
+            // Find root element based on VTON.init() call or custom ID
+            rootElement = document.getElementById(rootId);
+            if (!rootElement) {
+                console.warn("VTON Widget container ('#vton' or custom ID) not found. Programmatic use via VTON.process() is still available.");
+                return;
             }
-            return;
         }
+
 
         const externalTargetElement = determineTargetElement(rootElement);
 
-        // Render the widget UI, adjusting the result section based on the target
         rootElement.innerHTML = getWidgetHtml(externalTargetElement);
 
-        // Get elements for the generated UI
         const personImageFileInput = document.getElementById("personImageFile");
         const clothImageFileInput = document.getElementById("clothImageFile");
         const personImagePreview = document.getElementById("personImagePreview");
         const clothImagePreview = document.getElementById("clothImagePreview");
         const generateButton = document.getElementById("vton-generate-button");
-        statusElement = document.getElementById("vton-status-message"); // Assign to global status element
+        // Assign status element for the interactive widget
+        widgetStatusElement = document.getElementById("vton-status-message"); 
 
-        // Select the result display element: either the external target or the internal one
         const finalResultImage = externalTargetElement || document.getElementById("vton-result-image");
 
-        // Set up real-time image previews
-        setupImagePreview(personImageFileInput, personImagePreview); // Error fix is here
-        setupImagePreview(clothImageFileInput, clothImagePreview); // Error fix is here
+        setupImagePreview(personImageFileInput, personImagePreview);
+        setupImagePreview(clothImageFileInput, clothImagePreview);
 
-        // Event listener for the generate button (Manual File Upload)
+        // Event listener for the generate button (Method 1-3)
         generateButton.addEventListener("click", async () => {
             const personFile = personImageFileInput.files[0];
             const clothFile = clothImageFileInput.files[0];
             
             if (!personFile || !clothFile) {
-                statusElement.textContent = `Error: Please upload both images.`;
-                statusElement.className = 'status-error';
+                widgetStatusElement.textContent = `Error: Please upload both images.`;
+                widgetStatusElement.className = 'status-error';
                 return;
             }
 
@@ -271,12 +310,13 @@
                     fileToBase64(clothFile)
                 ]);
                 
-                await processTryOn(personImageBase64, garmentImageBase64, finalResultImage, statusElement, generateButton);
+                // Use widgetStatusElement for tracking and pass its ID for unique status management
+                await processTryOn('widget', personImageBase64, garmentImageBase64, finalResultImage, false, generateButton);
 
             } catch (error) {
                 console.error("VTON Widget File Read Error:", error);
-                statusElement.textContent = `Error reading files.`;
-                statusElement.className = 'status-error';
+                widgetStatusElement.textContent = `Error reading files.`;
+                widgetStatusElement.className = 'status-error';
             }
         });
     }
@@ -292,26 +332,18 @@
              if (options && options.target) {
                 globalTargetSelector = options.target; 
             }
-            // 💡 BUG FIX: Modified init to look for the options.root ID. 
-            // The previous code only checked for 'vton', ignoring custom root IDs.
+            
             const rootId = options && options.root ? options.root : 'vton';
             const rootElement = document.getElementById(rootId);
             
             if (rootElement) {
-                // Temporarily override rootElement for initialization flow
-                // so initializeWidget() runs against the correct custom root ID.
-                const originalGetElementById = document.getElementById;
-                document.getElementById = (id) => id === 'vton' ? rootElement : originalGetElementById(id);
-
+                // Temporarily ensure the initialization targets the correct custom root ID
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', initializeWidget);
                 } else {
                     initializeWidget();
                 }
-                // Restore original function after the call
-                document.getElementById = originalGetElementById; 
             } else {
-                // If init is called but the element isn't found
                 if (options && options.root) {
                     console.error(`VTON.init() Error: Root element with ID '${options.root}' not found.`);
                 }
@@ -320,48 +352,56 @@
 
         /**
          * Method 4: Programmatically triggers try-on using image URLs.
+         * The 'options.target' selector is used as the unique process ID
+         * to manage its dedicated floating status message.
          */
         process: async (options) => {
             if (!options || !options.personImageUrl || !options.garmentImageUrl || !options.target) {
                 console.error("VTON.process() Error: Missing required options (personImageUrl, garmentImageUrl, target).");
+                // Use a generic status ID if target is missing for a quick error message
+                showStatus('process-error', 'VTON.process() Error: Missing image URLs or target selector.', 'status-error', true); 
                 return;
             }
             
-            // Create a dummy status element if the widget wasn't initialized
-            if (!statusElement) {
-                statusElement = document.createElement('div');
-                statusElement.id = 'vton-status-process';
-                statusElement.style.cssText = "position: fixed; bottom: 10px; right: 10px; z-index: 1000; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); font-family: sans-serif; background-color: #fff;"; // Added styles for visibility
-                document.body.appendChild(statusElement); 
-            }
+            // Use the target selector (e.g., '#try-on-result-4') as the unique process ID
+            const processId = options.target.replace('#', '');
             
             const targetElement = document.querySelector(options.target);
             if (!targetElement || targetElement.tagName !== 'IMG') {
                 console.error(`VTON.process() Error: Target element '${options.target}' not found or is not an <img>.`);
-                statusElement.textContent = `VTON.process() Error: Target image not found.`;
-                statusElement.className = 'status-error';
+                showStatus(processId, `VTON.process() Error: Target image not found.`, 'status-error', true);
                 return;
             }
+            
+            // Optional callbacks for custom interfaces
+            if (options.onStart) options.onStart();
 
             try {
                 // 1. Fetch URLs and convert to Base64 in parallel
-                statusElement.textContent = "Fetching images and converting to data...";
-                statusElement.className = 'status-info';
+                showStatus(processId, "Fetching images and converting to data...", 'status-info', true);
 
-                // NOTE: The 403 errors are a hosting/CORS/hotlinking issue with imgur, not a JS bug.
-                // The Base64 conversion logic is now correct, but the fetch might still fail.
                 const [personImageBase64, garmentImageBase64] = await Promise.all([
                     urlToBase64(options.personImageUrl),
                     urlToBase64(options.garmentImageUrl)
                 ]);
 
                 // 2. Call the core processing function
-                await processTryOn(personImageBase64, garmentImageBase64, targetElement, statusElement, null); 
+                const resultUrl = await processTryOn(
+                    processId, 
+                    personImageBase64, 
+                    garmentImageBase64, 
+                    targetElement, 
+                    true, // isHeadless = true
+                    null // generateButton = null
+                );
                 
+                if (options.onComplete) options.onComplete(resultUrl);
+
             } catch (error) {
                 console.error("VTON.process() Initialization Error:", error);
-                statusElement.textContent = `VTON.process() Error: Failed to fetch image URLs. Check console for 403/CORS errors.`;
-                statusElement.className = 'status-error';
+                // Status is already handled by processTryOn, but add a final check
+                showStatus(processId, `VTON.process() Failed: Check console for details.`, 'status-error', true);
+                if (options.onError) options.onError(error);
             }
         }
     };
